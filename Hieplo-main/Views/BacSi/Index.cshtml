@@ -1,0 +1,295 @@
+@model IEnumerable<QuanLyBenhVienNoiTru.Models.BacSi>
+@{
+    ViewData["Title"] = "Danh sách bác sĩ";
+    ViewData["Subtitle"] = "Quản lý thông tin bác sĩ trong bệnh viện";
+}
+
+@section Breadcrumb {
+    <li class="breadcrumb-item active">Bác sĩ</li>
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+        <div>
+            <a href="@Url.Action("Create")" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>
+                Thêm bác sĩ
+            </a>
+            <button type="button" class="btn btn-light ms-2" data-bs-toggle="modal" data-bs-target="#filterModal">
+                <i class="fas fa-filter me-2"></i>
+                Lọc
+            </button>
+        </div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-light" id="exportExcel">
+                <i class="fas fa-file-excel me-2"></i>
+                Excel
+            </button>
+            <button type="button" class="btn btn-light" id="exportPdf">
+                <i class="fas fa-file-pdf me-2"></i>
+                PDF
+            </button>
+        </div>
+    </div>
+    
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mx-3 mt-3" role="alert">
+            <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mx-3 mt-3" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="doctorsTable">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="border-0">Mã BS</th>
+                        <th class="border-0">Họ tên</th>
+                        <th class="border-0">Chuyên khoa</th>
+                        <th class="border-0">Số điện thoại</th>
+                        <th class="border-0">Email</th>
+                        <th class="border-0">Số bệnh nhân</th>
+                        <th class="border-0">Trạng thái</th>
+                        <th class="border-0 text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.MaBacSi</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-xs me-2">
+                                        <span class="avatar-title rounded-circle bg-primary-soft text-primary">
+                                            @item.HoTen.Substring(0, 1).ToUpper()
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <a href="@Url.Action("Details", new { id = item.MaBacSi })" class="text-body fw-medium">
+                                            @item.HoTen
+                                        </a>
+                                        <br>
+                                        <small class="text-muted">@item.ChuyenKhoa</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@item.Khoa?.TenKhoa</td>
+                            <td>@item.SoDienThoai</td>
+                            <td>@item.Email</td>
+                            <td>
+                                <span class="badge bg-primary">Tổng: @(item.BenhNhans?.Count() ?? 0)</span>
+                                @if (ViewData[$"SoBenhNhanDangDieuTri_{item.MaBacSi}"] != null)
+                                {
+                                    <span class="badge bg-success ms-1">Đang điều trị: @ViewData[$"SoBenhNhanDangDieuTri_{item.MaBacSi}"]</span>
+                                }
+                            </td>
+                            <td>
+                                @if (item.TrangThai)
+                                {
+                                    <span class="badge bg-success">Đang hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Ngừng hoạt động</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="dropdown">
+                                    <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="@Url.Action("Details", new { id = item.MaBacSi })">
+                                                <i class="fas fa-eye me-2 text-primary"></i>
+                                                Xem chi tiết
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="@Url.Action("Edit", new { id = item.MaBacSi })">
+                                                <i class="fas fa-edit me-2 text-warning"></i>
+                                                Chỉnh sửa
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="#" 
+                                               onclick="confirmDelete('@item.MaBacSi', '@item.HoTen')">
+                                                <i class="fas fa-trash-alt me-2"></i>
+                                                Xóa
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal lọc -->
+<div class="modal fade" id="filterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Lọc danh sách</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="form-floating">
+                            <select id="filterKhoa" class="form-select">
+                                <option value="">Tất cả</option>
+                                @foreach (var khoa in ViewBag.MaKhoa)
+                                {
+                                    <option value="@khoa.Text">@khoa.Text</option>
+                                }
+                            </select>
+                            <label>Khoa</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-floating">
+                            <select id="filterTrangThai" class="form-select">
+                                <option value="">Tất cả</option>
+                                <option value="Đang hoạt động">Đang hoạt động</option>
+                                <option value="Ngừng hoạt động">Ngừng hoạt động</option>
+                            </select>
+                            <label>Trạng thái</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="applyFilter">Áp dụng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận xóa -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Bạn có chắc chắn muốn xóa bác sĩ <span id="doctorName" class="fw-bold"></span>? Hành động này không thể hoàn tác.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <form id="deleteForm" asp-action="Delete" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="doctorId" name="id" />
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger">Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Khởi tạo DataTable
+            var table = $('#doctorsTable').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json"
+                },
+                "pageLength": 10,
+                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "Tất cả"]],
+                "dom": 'Bfrtip',
+                "buttons": [
+                    {
+                        extend: 'excel',
+                        text: '<i class="fas fa-file-excel"></i> Excel',
+                        className: 'd-none',
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4, 5, 6]
+                        },
+                        title: 'Danh sách bác sĩ'
+                    },
+                    {
+                        extend: 'pdf',
+                        text: '<i class="fas fa-file-pdf"></i> PDF',
+                        className: 'd-none',
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4, 5, 6]
+                        },
+                        title: 'Danh sách bác sĩ'
+                    }
+                ]
+            });
+            
+            // Xử lý xuất Excel
+            $('#exportExcel').click(function() {
+                table.button('.buttons-excel').trigger();
+            });
+            
+            // Xử lý xuất PDF
+            $('#exportPdf').click(function() {
+                table.button('.buttons-pdf').trigger();
+            });
+            
+            // Xử lý lọc
+            $('#applyFilter').click(function() {
+                var khoa = $('#filterKhoa').val();
+                var trangThai = $('#filterTrangThai').val();
+                
+                table
+                    .columns(2).search(khoa)
+                    .columns(6).search(trangThai)
+                    .draw();
+                
+                $('#filterModal').modal('hide');
+            });
+        });
+        
+        // Xử lý xác nhận xóa
+        function confirmDelete(id, name) {
+            $('#doctorId').val(id);
+            $('#doctorName').text(name);
+            $('#deleteModal').modal('show');
+        }
+    </script>
+    
+    <style>
+        .avatar-xs {
+            height: 2rem;
+            width: 2rem;
+        }
+        
+        .avatar-title {
+            align-items: center;
+            display: flex;
+            font-weight: 500;
+            height: 100%;
+            justify-content: center;
+            width: 100%;
+        }
+        
+        .bg-primary-soft {
+            background-color: rgba(13, 110, 253, 0.1) !important;
+        }
+    </style>
+}

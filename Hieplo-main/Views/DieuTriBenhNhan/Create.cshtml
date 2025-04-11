@@ -1,0 +1,119 @@
+@model QuanLyBenhVienNoiTru.Models.DieuTriBenhNhan
+
+@{
+    ViewData["Title"] = "Thêm điều trị mới";
+    ViewData["Subtitle"] = "Tạo mới phương pháp điều trị cho bệnh nhân";
+}
+
+@section Breadcrumb {
+    <li class="breadcrumb-item"><a asp-action="Index">Điều trị</a></li>
+    <li class="breadcrumb-item active">Thêm mới</li>
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Thêm điều trị mới</h3>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.FixedPatient)
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Đang thêm điều trị cho bệnh nhân: <strong>@ViewBag.BenhNhanInfo</strong>
+                        </div>
+                    }
+
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="MaBenhNhan" class="control-label">Bệnh nhân</label>
+                                    <select asp-for="MaBenhNhan" asp-items="ViewBag.MaBenhNhan" class="form-select" disabled="@ViewBag.FixedPatient">
+                                        <option value="">-- Chọn bệnh nhân --</option>
+                                    </select>
+                                    @if (ViewBag.FixedPatient)
+                                    {
+                                        <input type="hidden" asp-for="MaBenhNhan" />
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-lock me-1"></i>
+                                            Bệnh nhân đã được cố định theo yêu cầu
+                                        </small>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="MaBacSi" class="control-label">Bác sĩ phụ trách</label>
+                                    <select asp-for="MaBacSi" asp-items="ViewBag.MaBacSi" class="form-select" disabled="@ViewBag.BacSiIsLocked">
+                                        <option value="">-- Chọn bác sĩ --</option>
+                                    </select>
+                                    @if (ViewBag.BacSiIsLocked)
+                                    {
+                                        <input type="hidden" asp-for="MaBacSi" />
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-lock me-1"></i>
+                                            Bác sĩ được cố định theo bác sĩ phụ trách bệnh nhân
+                                        </small>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="MaDieuTri" class="control-label">Hình thức điều trị</label>
+                                    <select asp-for="MaDieuTri" asp-items="ViewBag.MaDieuTri" class="form-select">
+                                        <option value="">-- Chọn hình thức điều trị --</option>
+                                    </select>
+                                    <span asp-validation-for="MaDieuTri" class="text-danger"></span>
+                                    @if (ViewBag.KhoaIsLocked)
+                                    {
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Chỉ hiển thị các hình thức điều trị thuộc khoa của bệnh nhân
+                                        </small>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="NgayThucHien" class="control-label">Ngày thực hiện</label>
+                                    <input asp-for="NgayThucHien" class="form-control" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                                    <span asp-validation-for="NgayThucHien" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Lưu
+                            </button>
+                            @if (ViewBag.ReturnToBenhNhanDetail)
+                            {
+                                <a href="@Url.Action("Details", "BenhNhan", new { id = Model.MaBenhNhan })" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i>Hủy
+                                </a>
+                            }
+                            else
+                            {
+                                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i>Hủy
+                                </a>
+                            }
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
